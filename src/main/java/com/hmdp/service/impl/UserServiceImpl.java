@@ -40,6 +40,7 @@ import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
  */
 @Slf4j
 @Service
+// ServiceImpl   MyBatisPlus 单表增删改查  User里面注解
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
 
     @Resource
@@ -55,10 +56,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 3.符合，生成验证码
         String code = RandomUtil.randomNumbers(6);
 
-        // 4.保存验证码到 session
+        // 保存验证码到 session
+//        session.setAttribute(LOGIN_CODE_KEY + phone, code);
+
+        // 4.保存验证码到 redis
         stringRedisTemplate.opsForValue().set(LOGIN_CODE_KEY + phone, code, LOGIN_CODE_TTL, TimeUnit.MINUTES);
 
-        // 5.发送验证码
+        // 5.发送验证码（第三方平台）
         log.debug("发送短信验证码成功，验证码：{}", code);
         // 返回ok
         return Result.ok();
@@ -81,6 +85,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
 
         // 4.一致，根据手机号查询用户 select * from tb_user where phone = ?
+        // query() = select * from tb_user
+        // eq() = where
+        // list() 返回多个
+        // one() 返回一个
         User user = query().eq("phone", phone).one();
 
         // 5.判断用户是否存在
@@ -88,6 +96,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             // 6.不存在，创建新用户并保存
             user = createUserWithPhone(phone);
         }
+
+        // 保存用户信息到 session
+//        session.setAttribute(LOGIN_USER_KEY, user);
 
         // 7.保存用户信息到 redis中
         // 7.1.随机生成token，作为登录令牌
